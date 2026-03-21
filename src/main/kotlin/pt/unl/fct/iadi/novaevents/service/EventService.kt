@@ -11,9 +11,11 @@ class EventService {
     private var nextId = 1L
 
     init {
-        // É crucial manter esta ordem para que os IDs batam certo com os testes
+        // ID 1
         create(1, "Beginner's Chess Workshop", LocalDate.now().plusDays(7), EventType.WORKSHOP)
+        // ID 2 -> É este que o teste US4 procura em /clubs/1/events/2
         create(1, "Spring Chess Tournament", LocalDate.now().plusDays(14), EventType.COMPETITION)
+        // ID 3
         create(2, "Robot Build Night", LocalDate.now().plusDays(2), EventType.WORKSHOP)
     }
 
