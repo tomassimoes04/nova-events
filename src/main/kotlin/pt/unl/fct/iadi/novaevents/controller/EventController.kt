@@ -17,11 +17,11 @@ class EventController(
     private val clubService: ClubService
 ) {
 
-    // US3: Lista Global de Eventos
+
     @GetMapping("/events")
     fun listAllEvents(
         @RequestParam(required = false) type: EventType?,
-        @RequestParam(required = false) clubId: Long?,
+        @RequestParam(name = "club", required = false) clubId: Long?,
         @RequestParam(required = false) from: LocalDate?,
         @RequestParam(required = false) to: LocalDate?,
         model: ModelMap
@@ -38,7 +38,14 @@ class EventController(
         return "events/list"
     }
 
-    // US5: Mostrar formulário de criação
+    // US4: Este método estava em falta e causava o erro 405 [cite: 1133]
+    @GetMapping("/clubs/{clubId}/events/{eventId}")
+    fun eventDetail(@PathVariable clubId: Long, @PathVariable eventId: Long, model: ModelMap): String {
+        model["event"] = eventService.findById(eventId)
+        model["clubId"] = clubId
+        return "events/detail"
+    }
+
     @GetMapping("/clubs/{clubId}/events/new")
     fun showCreateForm(@PathVariable clubId: Long, model: ModelMap): String {
         model["eventRequest"] = EventRequest()
@@ -46,7 +53,6 @@ class EventController(
         return "events/form"
     }
 
-    // US5: Criar evento (POST)
     @PostMapping("/clubs/{clubId}/events")
     fun createEvent(
         @PathVariable clubId: Long,
@@ -58,54 +64,49 @@ class EventController(
             model["clubId"] = clubId
             return "events/form"
         }
-
         return try {
-            eventService.create(clubId, form.name!!, form.date!!, form.type!!, form.location, form.description)
-            "redirect:/clubs/$clubId" // POST-Redirect-GET [cite: 874, 1137]
+            val newEvent = eventService.create(clubId, form.name!!, form.date!!, form.type!!, form.location, form.description)
+            "redirect:/clubs/$clubId/events/${newEvent.id}"
         } catch (e: IllegalArgumentException) {
-            bindingResult.rejectValue("name", "duplicate", e.message ?: "Invalid name")
+            bindingResult.rejectValue("name", "duplicate", e.message ?: "")
             model["clubId"] = clubId
             return "events/form"
         }
     }
 
-    // US6: Mostrar formulário de edição
     @GetMapping("/clubs/{clubId}/events/{eventId}/edit")
     fun showEditForm(@PathVariable clubId: Long, @PathVariable eventId: Long, model: ModelMap): String {
         val event = eventService.findById(eventId)
         model["eventRequest"] = EventRequest(event.name, event.date, event.type, event.location, event.description)
         model["clubId"] = clubId
         model["eventId"] = eventId
-        return "events/form" // Reutiliza o formulário existente
+        return "events/form"
     }
 
-    // US6: Atualizar evento (PUT)
     @PutMapping("/clubs/{clubId}/events/{eventId}")
     fun updateEvent(
         @PathVariable clubId: Long,
         @PathVariable eventId: Long,
         @Valid @ModelAttribute("eventRequest") form: EventRequest,
         bindingResult: BindingResult,
-        model: ModelMap // Adicionado para lidar com erros
+        model: ModelMap
     ): String {
         if (bindingResult.hasErrors()) {
             model["clubId"] = clubId
             model["eventId"] = eventId
-            return "events/form" // Corrigido de "events/edit" para "events/form"
+            return "events/form"
         }
-
         return try {
             eventService.update(eventId, form.name!!, form.date!!, form.type!!, form.location, form.description)
-            "redirect:/clubs/$clubId"
+            "redirect:/clubs/$clubId/events/$eventId"
         } catch (e: IllegalArgumentException) {
-            bindingResult.rejectValue("name", "duplicate", e.message ?: "Invalid name")
+            bindingResult.rejectValue("name", "duplicate", e.message ?: "")
             model["clubId"] = clubId
             model["eventId"] = eventId
             return "events/form"
         }
     }
 
-    // US7: Confirmar eliminação
     @GetMapping("/clubs/{clubId}/events/{eventId}/delete")
     fun confirmDelete(@PathVariable clubId: Long, @PathVariable eventId: Long, model: ModelMap): String {
         model["event"] = eventService.findById(eventId)
@@ -113,7 +114,6 @@ class EventController(
         return "events/delete-confirm"
     }
 
-    // US7: Eliminar (DELETE)
     @DeleteMapping("/clubs/{clubId}/events/{eventId}")
     fun deleteEvent(@PathVariable clubId: Long, @PathVariable eventId: Long): String {
         eventService.delete(eventId)
