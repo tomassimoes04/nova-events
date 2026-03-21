@@ -1,0 +1,40 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head th:replace="~{fragments/layout :: head('Event Details')}"></head>
+<body>
+<nav th:replace="~{fragments/layout :: navbar}"></nav>
+
+<div class="container">
+  <nav aria-label="breadcrumb">
+    <ol class="breadcrumb">
+      <li class="breadcrumb-item"><a th:href="@{/clubs}">Clubs</a></li>
+      <li class="breadcrumb-item"><a th:href="@{/clubs/{id}(id=${event.clubId})}" th:text="'Club ' + ${event.clubId}">Club</a></li>
+      <li class="breadcrumb-item active" aria-current="page" th:text="${event.name}">Event</li>
+    </ol>
+  </nav>
+
+  <div class="card shadow-sm">
+    <div class="card-header bg-primary text-white">
+      <h2 class="mb-0" th:text="${event.name}">Event Name</h2>
+    </div>
+    <div class="card-body">
+      <div class="row">
+        <div class="col-md-6">
+          <p><strong>Date:</strong> <span th:text="${event.date}">2024-01-01</span></p>
+          <p><strong>Type:</strong> <span class="badge bg-secondary" th:text="${event.type}">WORKSHOP</span></p>
+          <p><strong>Location:</strong> <span th:text="${event.location ?: 'N/A'}">Location</span></p>
+        </div>
+        <div class="col-md-6">
+          <h5>Description</h5>
+          <p th:text="${event.description ?: 'No description provided.'}">Description</p>
+        </div>
+      </div>
+    </div>
+    <div class="card-footer d-flex gap-2">
+      <a th:href="@{/clubs/{cId}/events/{eId}/edit(cId=${event.clubId}, eId=${event.id})}" class="btn btn-warning">Edit Event</a>
+      <a th:href="@{/clubs/{cId}/events/{eId}/delete(cId=${event.clubId}, eId=${event.id})}" class="btn btn-danger">Delete Event</a>
+    </div>
+  </div>
+</div>
+</body>
+</html>

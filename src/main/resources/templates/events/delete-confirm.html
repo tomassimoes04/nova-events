@@ -1,0 +1,22 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head th:replace="~{fragments/layout :: head('Confirm Deletion')}"></head>
+<body>
+<nav th:replace="~{fragments/layout :: navbar}"></nav>
+
+<div class="container mt-5">
+    <div class="alert alert-danger">
+        <h3>Are you sure?</h3>
+        <p>You are about to delete the event: <strong th:text="${event.name}">Event Name</strong>.</p>
+        <p>This action cannot be undone.</p>
+
+        <form th:action="@{/clubs/{cId}/events/{eId}(cId=${clubId}, eId=${event.id})}" th:method="delete">
+            <button type="submit" class="btn btn-danger">Yes, Delete Permanentely</button>
+            <a th:href="@{/clubs/{id}(id=${clubId})}" class="btn btn-secondary">No, Cancel</a>
+        </form>
+    </div>
+</div>
+
+<th:block th:replace="~{fragments/layout :: scripts}"></th:block>
+</body>
+</html>

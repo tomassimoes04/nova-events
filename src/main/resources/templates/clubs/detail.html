@@ -1,0 +1,36 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head th:replace="~{fragments/layout :: head('Club Detail')}"></head>
+<body>
+<nav th:replace="~{fragments/layout :: navbar}"></nav>
+
+<div class="container">
+    <div class="card mb-4">
+        <div class="card-body">
+            <h1 class="card-title" th:text="${club.name}">Club Name</h1>
+            <p class="badge bg-info text-dark" th:text="${club.category}">Category</p>
+            <p class="lead" th:text="${club.description}">Description</p>
+        </div>
+    </div>
+
+    <h3>Events for this Club</h3>
+    <table class="table">
+        <thead>
+        <tr><th>Event</th><th>Date</th><th>Type</th><th>Actions</th></tr>
+        </thead>
+        <tbody>
+        <tr th:each="event : ${events}">
+            <td th:text="${event.name}">Name</td>
+            <td th:text="${event.date}">Date</td>
+            <td th:text="${event.type}">Type</td>
+            <td>
+                <a th:href="@{/clubs/{cId}/events/{eId}(cId=${club.id}, eId=${event.id})}" class="btn btn-sm btn-outline-primary">View</a>
+            </td>
+        </tr>
+        </tbody>
+    </table>
+
+    <a th:href="@{/clubs/{id}/events/new(id=${club.id})}" class="btn btn-success">Add New Event</a>
+</div>
+</body>
+</html>

@@ -1,0 +1,64 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head th:replace="~{fragments/layout :: head(${eventId != null} ? 'Edit Event' : 'Create Event')}"></head>
+<body>
+<nav th:replace="~{fragments/layout :: navbar}"></nav>
+
+<div class="container mt-4">
+    <h2 th:text="${eventId != null} ? 'Edit Event' : 'Create New Event'">Form</h2>
+    <hr>
+
+    <form th:action="${eventId != null}
+                          ? @{/clubs/{cId}/events/{eId}(cId=${clubId}, eId=${eventId})}
+                          : @{/clubs/{cId}/events(cId=${clubId})}"
+          th:method="${eventId != null} ? 'put' : 'post'"
+          th:object="${eventRequest}" class="needs-validation">
+
+        <div th:if="${#fields.hasErrors('global')}" class="alert alert-danger" th:errors="*{global}"></div>
+
+        <div class="mb-3">
+            <label class="form-label">Event Name*</label>
+            <input type="text" th:field="*{name}" class="form-control"
+                   th:classappend="${#fields.hasErrors('name')} ? 'is-invalid'">
+            <div class="invalid-feedback" th:errors="*{name}">Name error</div>
+        </div>
+
+        <div class="mb-3">
+            <label class="form-label">Date*</label>
+            <input type="date" th:field="*{date}" class="form-control"
+                   th:classappend="${#fields.hasErrors('date')} ? 'is-invalid'">
+            <div class="invalid-feedback" th:errors="*{date}">Date error</div>
+        </div>
+
+        <div class="mb-3">
+            <label class="form-label">Type*</label>
+            <select th:field="*{type}" class="form-select"
+                    th:classappend="${#fields.hasErrors('type')} ? 'is-invalid'">
+                <option value="">Select type...</option>
+                <option th:each="t : ${T(pt.unl.fct.iadi.novaevents.model.EventType).values()}"
+                        th:value="${t}" th:text="${t}"></option>
+            </select>
+            <div class="invalid-feedback" th:errors="*{type}">Type error</div>
+        </div>
+
+        <div class="mb-3">
+            <label class="form-label">Location</label>
+            <input type="text" th:field="*{location}" class="form-control">
+        </div>
+
+        <div class="mb-3">
+            <label class="form-label">Description</label>
+            <textarea th:field="*{description}" class="form-control" rows="3"></textarea>
+        </div>
+
+        <div class="mt-4">
+            <button type="submit" class="btn btn-primary"
+                    th:text="${eventId != null} ? 'Update Event' : 'Create Event'"></button>
+            <a th:href="@{/clubs/{id}(id=${clubId})}" class="btn btn-secondary">Cancel</a>
+        </div>
+    </form>
+</div>
+
+<th:block th:replace="~{fragments/layout :: scripts}"></th:block>
+</body>
+</html>

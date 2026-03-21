@@ -1,0 +1,58 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head th:replace="~{fragments/layout :: head('All Events')}"></head>
+
+<body>
+<nav th:replace="~{fragments/layout :: navbar}"></nav>
+
+<div class="container">
+    <h1 class="mb-4">All Campus Events</h1>
+
+    <form th:action="@{/events}" method="get" class="row g-3 mb-4 bg-light p-3 border rounded">
+        <div class="col-md-3">
+            <label class="form-label">Type</label>
+            <select name="type" class="form-select">
+                <option value="">All Types</option>
+                <option th:each="t : ${T(pt.unl.fct.iadi.novaevents.model.EventType).values()}"
+                        th:value="${t}" th:text="${t}"></option>
+            </select>
+        </div>
+        <div class="col-md-3">
+            <label class="form-label">From Date</label>
+            <input type="date" name="from" class="form-control">
+        </div>
+        <div class="col-md-2 d-flex align-items-end">
+            <button type="submit" class="btn btn-primary w-100">Filter</button>
+        </div>
+    </form>
+
+    <table class="table table-striped table-hover">
+        <thead class="table-dark">
+        <tr>
+            <th>Name</th>
+            <th>Date</th>
+            <th>Club ID</th>
+            <th>Actions</th>
+        </tr>
+        </thead>
+        <tbody>
+        <tr th:each="event : ${events}">
+            <td th:text="${event.name}"></td>
+            <td th:text="${event.date}"></td>
+            <td th:text="${event.clubId}"></td>
+            <td>
+                <div class="btn-group">
+                    <a th:href="@{/clubs/{cId}/events/{eId}/edit(cId=${event.clubId}, eId=${event.id})}"
+                       class="btn btn-sm btn-warning">Edit</a>
+                    <a th:href="@{/clubs/{cId}/events/{eId}/delete(cId=${event.clubId}, eId=${event.id})}"
+                       class="btn btn-sm btn-danger">Delete</a>
+                </div>
+            </td>
+        </tr>
+        </tbody>
+    </table>
+</div>
+
+<th:block th:replace="~{fragments/layout :: scripts}"></th:block>
+</body>
+</html>
