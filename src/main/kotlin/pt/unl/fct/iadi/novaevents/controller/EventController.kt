@@ -38,10 +38,13 @@ class EventController(
         return "events/list"
     }
 
-    // US4: Este método estava em falta e causava o erro 405 [cite: 1133]
     @GetMapping("/clubs/{clubId}/events/{eventId}")
     fun eventDetail(@PathVariable clubId: Long, @PathVariable eventId: Long, model: ModelMap): String {
-        model["event"] = eventService.findById(eventId)
+        val event = eventService.findById(eventId)
+        val club = clubService.findById(clubId)
+
+        model["event"] = event
+        model["club"] = club
         model["clubId"] = clubId
         return "events/detail"
     }

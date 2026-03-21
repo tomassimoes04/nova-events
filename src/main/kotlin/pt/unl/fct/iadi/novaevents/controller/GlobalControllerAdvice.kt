@@ -12,8 +12,8 @@ class GlobalControllerAdvice {
 
     @ExceptionHandler(NoSuchElementException::class)
     @ResponseStatus(HttpStatus.NOT_FOUND)
-    fun handleNotFound(ex: NoSuchElementException, model: ModelMap): String {
-        model["errorMessage"] = ex.message ?: "Resource not found"
+    fun handleNotFound(ex: Exception, model: ModelMap): String {
+        model["errorMessage"] = ex.message ?: "Not found"
         return "error/404"
     }
 }
