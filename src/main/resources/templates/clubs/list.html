@@ -25,6 +25,13 @@
         </tbody>
     </table>
 </div>
+<div class="col-md-3">
+    <label class="form-label">Club</label>
+    <select name="club" class="form-select">
+        <option value="">All Clubs</option>
+        <option th:each="c : ${clubs}" th:value="${c.id}" th:text="${c.name}"></option>
+    </select>
+</div>
 
 <th:block th:replace="~{fragments/layout :: scripts}"></th:block>
 </body>

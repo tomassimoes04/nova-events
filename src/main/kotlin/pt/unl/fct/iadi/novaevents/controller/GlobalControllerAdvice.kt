@@ -5,15 +5,15 @@ import org.springframework.ui.ModelMap
 import org.springframework.web.bind.annotation.ControllerAdvice
 import org.springframework.web.bind.annotation.ExceptionHandler
 import org.springframework.web.bind.annotation.ResponseStatus
+import java.util.NoSuchElementException
 
 @ControllerAdvice
 class GlobalControllerAdvice {
 
-    // Catches NoSuchElementException from any service and turns it into a 404
     @ExceptionHandler(NoSuchElementException::class)
     @ResponseStatus(HttpStatus.NOT_FOUND)
     fun handleNotFound(ex: NoSuchElementException, model: ModelMap): String {
-        model["errorMessage"] = ex.message ?: "The resource you requested could not be found."
+        model["errorMessage"] = ex.message ?: "Resource not found"
         return "error/404"
     }
 }

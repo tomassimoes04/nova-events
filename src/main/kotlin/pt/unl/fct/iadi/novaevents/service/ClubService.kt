@@ -18,7 +18,6 @@ class ClubService {
     fun findAll(): List<Club> = clubs
 
     fun findById(id: Long): Club {
-        // Services should throw domain exceptions like NoSuchElementException [cite: 1248-1250]
         return clubs.find { it.id == id }
             ?: throw NoSuchElementException("Club with id $id not found")
     }

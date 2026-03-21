@@ -14,15 +14,14 @@ class ClubController(private val clubService: ClubService
 
     @GetMapping("/", "/clubs")
     fun listClubs(model: ModelMap): String {
-        // model["key"] is the same as model.addAttribute("key", value) [cite: 1400]
         model["clubs"] = clubService.findAll()
-        return "clubs/list" // This matches your template folder structure
+        return "clubs/list"
     }
 
     @GetMapping("/clubs/{id}")
     fun clubDetail(@PathVariable id: Long, model: ModelMap): String {
         model["club"] = clubService.findById(id)
-        model["events"] = eventService.findByClub(id) // Add this line
+        model["events"] = eventService.findByClub(id)
         return "clubs/detail"
     }
 }
