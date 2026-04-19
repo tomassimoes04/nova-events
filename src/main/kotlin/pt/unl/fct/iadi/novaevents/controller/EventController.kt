@@ -1,22 +1,25 @@
 package pt.unl.fct.iadi.novaevents.controller
 
 import jakarta.validation.Valid
+import org.springframework.security.access.prepost.PreAuthorize
+import org.springframework.security.core.Authentication
 import org.springframework.stereotype.Controller
 import org.springframework.ui.ModelMap
 import org.springframework.validation.BindingResult
 import org.springframework.web.bind.annotation.*
 import pt.unl.fct.iadi.novaevents.controller.dto.EventRequest
-import pt.unl.fct.iadi.novaevents.service.EventService
-import pt.unl.fct.iadi.novaevents.service.ClubService
 import pt.unl.fct.iadi.novaevents.model.EventType
+import pt.unl.fct.iadi.novaevents.service.AppUserDetailsManager
+import pt.unl.fct.iadi.novaevents.service.ClubService
+import pt.unl.fct.iadi.novaevents.service.EventService
 import java.time.LocalDate
 
 @Controller
 class EventController(
     private val eventService: EventService,
-    private val clubService: ClubService
+    private val clubService: ClubService,
+    private val userDetailsManager: AppUserDetailsManager
 ) {
-
 
     @GetMapping("/events")
     fun listAllEvents(
@@ -61,23 +64,27 @@ class EventController(
         @PathVariable clubId: Long,
         @Valid @ModelAttribute("eventRequest") form: EventRequest,
         bindingResult: BindingResult,
-        model: ModelMap
+        model: ModelMap,
+        authentication: Authentication
     ): String {
         if (bindingResult.hasErrors()) {
             model["clubId"] = clubId
             return "events/form"
         }
         return try {
-            val newEvent = eventService.create(clubId, form.name!!, form.date!!, form.type!!, form.location, form.description)
+            val owner = userDetailsManager.findAppUser(authentication.name)
+            val newEvent = eventService.create(clubId, form.name!!, form.date!!, form.type!!,
+                form.location, form.description, owner)
             "redirect:/clubs/$clubId/events/${newEvent.id}"
         } catch (e: IllegalArgumentException) {
             bindingResult.rejectValue("name", "duplicate", e.message ?: "")
             model["clubId"] = clubId
-            return "events/form"
+            "events/form"
         }
     }
 
     @GetMapping("/clubs/{clubId}/events/{eventId}/edit")
+    @PreAuthorize("@eventService.isOwner(#eventId, authentication.name)")
     fun showEditForm(@PathVariable clubId: Long, @PathVariable eventId: Long, model: ModelMap): String {
         val event = eventService.findById(eventId)
         model["eventRequest"] = EventRequest(event.name, event.date, event.type, event.location, event.description)
@@ -87,6 +94,7 @@ class EventController(
     }
 
     @PutMapping("/clubs/{clubId}/events/{eventId}")
+    @PreAuthorize("@eventService.isOwner(#eventId, authentication.name)")
     fun updateEvent(
         @PathVariable clubId: Long,
         @PathVariable eventId: Long,
@@ -106,11 +114,12 @@ class EventController(
             bindingResult.rejectValue("name", "duplicate", e.message ?: "")
             model["clubId"] = clubId
             model["eventId"] = eventId
-            return "events/form"
+            "events/form"
         }
     }
 
     @GetMapping("/clubs/{clubId}/events/{eventId}/delete")
+    @PreAuthorize("@eventService.isOwner(#eventId, authentication.name) or hasRole('ADMIN')")
     fun confirmDelete(@PathVariable clubId: Long, @PathVariable eventId: Long, model: ModelMap): String {
         model["event"] = eventService.findById(eventId)
         model["clubId"] = clubId
@@ -118,6 +127,7 @@ class EventController(
     }
 
     @DeleteMapping("/clubs/{clubId}/events/{eventId}")
+    @PreAuthorize("@eventService.isOwner(#eventId, authentication.name) or hasRole('ADMIN')")
     fun deleteEvent(@PathVariable clubId: Long, @PathVariable eventId: Long): String {
         eventService.delete(eventId)
         return "redirect:/clubs/$clubId"
