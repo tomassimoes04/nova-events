@@ -9,8 +9,8 @@ import java.util.Date
 
 @Service
 class JwtService(
-    @Value("\${jwt.secret}") private val secret: String,
-    @Value("\${jwt.expiration}") private val expiration: Long
+    @Value("\${jwt.secret:nova-events-secret-key-must-be-at-least-256-bits-long-for-hs256}") private val secret: String,
+    @Value("\${jwt.expiration:86400000}") private val expiration: Long
 ) {
     private val key by lazy { Keys.hmacShaKeyFor(secret.toByteArray()) }
 
