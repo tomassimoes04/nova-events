@@ -40,6 +40,16 @@ class LoginSuccessHandler(private val jwtService: JwtService) : AuthenticationSu
         }
         response.addCookie(clearRedirect)
 
-        response.sendRedirect(redirectUrl)
+        // Build absolute URL so MockMvc tests (and real browsers) get a fully-qualified Location header
+        val absoluteUrl = if (redirectUrl.startsWith("http://") || redirectUrl.startsWith("https://")) {
+            redirectUrl
+        } else {
+            val scheme = request.scheme
+            val host = request.serverName
+            val port = request.serverPort
+            val portSuffix = if ((scheme == "http" && port == 80) || (scheme == "https" && port == 443)) "" else ":$port"
+            "$scheme://$host$portSuffix${request.contextPath}$redirectUrl"
+        }
+        response.sendRedirect(absoluteUrl)
     }
 }

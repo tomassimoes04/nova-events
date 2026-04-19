@@ -11,7 +11,10 @@ import java.time.LocalDate
 @Service
 class EventService(private val eventRepository: EventRepository) {
 
-    fun findAll(): List<Event> = eventRepository.findAll()
+    fun findAll(): List<Event> = eventRepository.findFiltered(null, null, null, null)
+
+    fun findFiltered(type: EventType?, clubId: Long?, from: LocalDate?, to: LocalDate?): List<Event> =
+        eventRepository.findFiltered(type, clubId, from, to)
 
     fun findById(id: Long): Event = eventRepository.findById(id)
         .orElseThrow { NoSuchElementException("Event not found") }

@@ -29,15 +29,7 @@ class EventController(
         @RequestParam(required = false) to: LocalDate?,
         model: ModelMap
     ): String {
-        var filteredEvents = eventService.findAll()
-
-        if (type != null) filteredEvents = filteredEvents.filter { it.type == type }
-        if (clubId != null) filteredEvents = filteredEvents.filter { it.clubId == clubId }
-        if (from != null) filteredEvents = filteredEvents.filter { !it.date.isBefore(from) }
-        if (to != null) filteredEvents = filteredEvents.filter { !it.date.isAfter(to) }
-
-        model["events"] = filteredEvents
-        model["clubs"] = clubService.findAll()
+        model["events"] = eventService.findFiltered(type, clubId, from, to)
         return "events/list"
     }
 
