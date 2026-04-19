@@ -8,7 +8,7 @@
     <h1>Campus Clubs</h1>
     <table class="table table-striped">
         <thead>
-        <tr><th>Club Name</th><th>Details</th></tr>
+        <tr><th>Club Name</th><th>Events</th><th>Details</th></tr>
         </thead>
         <tbody>
         <tr th:each="club : ${clubs}">
@@ -18,6 +18,7 @@
                     <p class="mt-2" th:text="${club.description}">Description...</p>
                 </details>
             </td>
+            <td th:text="${#lists.size(club.events)}">0</td>
             <td>
                 <a th:href="@{/clubs/{id}(id=${club.id})}" class="btn btn-sm btn-primary">View Detail</a>
             </td>

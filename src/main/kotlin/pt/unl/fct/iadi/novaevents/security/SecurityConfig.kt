@@ -13,6 +13,7 @@ import org.springframework.security.config.http.SessionCreationPolicy
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder
 import org.springframework.security.crypto.password.PasswordEncoder
 import org.springframework.security.web.SecurityFilterChain
+import org.springframework.security.web.authentication.LoginUrlAuthenticationEntryPoint
 import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter
 import org.springframework.security.web.csrf.CookieCsrfTokenRepository
 
@@ -67,8 +68,9 @@ class SecurityConfig(
                 csrf.csrfTokenRepository(CookieCsrfTokenRepository.withHttpOnlyFalse())
             }
             .exceptionHandling { ex ->
-                ex.authenticationEntryPoint { request, response, _ ->
-                    // Save the requested URL in a cookie before redirecting to login
+                val loginEntryPoint = LoginUrlAuthenticationEntryPoint("/login")
+                ex.authenticationEntryPoint { request, response, authException ->
+                    // Save the requested URL in a cookie for post-login redirect
                     val savedUrl = request.requestURI +
                         (request.queryString?.let { "?$it" } ?: "")
                     val redirectCookie = Cookie("REDIRECT_URI", savedUrl).apply {
@@ -76,7 +78,8 @@ class SecurityConfig(
                         maxAge = 300
                     }
                     response.addCookie(redirectCookie)
-                    response.sendRedirect("/login")
+                    // Delegate to Spring's standard entry point (sends absolute redirect URL)
+                    loginEntryPoint.commence(request, response, authException)
                 }
             }
             .addFilterBefore(jwtAuthFilter, UsernamePasswordAuthenticationFilter::class.java)

@@ -11,8 +11,12 @@ class Event(
     @Id @GeneratedValue(strategy = GenerationType.IDENTITY)
     val id: Long = 0,
 
-    @Column(nullable = false)
+    @Column(name = "club_id", nullable = false)
     val clubId: Long = 0,
+
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "club_id", insertable = false, updatable = false)
+    val club: Club? = null,
 
     @Column(nullable = false)
     var name: String = "",
