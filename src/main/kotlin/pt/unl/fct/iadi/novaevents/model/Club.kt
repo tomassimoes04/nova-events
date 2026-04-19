@@ -18,6 +18,8 @@ class Club(
     @Column(nullable = false)
     var category: ClubCategory = ClubCategory.SOCIAL
 ) {
-    @OneToMany(mappedBy = "club", fetch = FetchType.LAZY)
+    // Unidirectional — club_id FK is owned by Event.clubId; Club reads it read-only
+    @OneToMany(fetch = FetchType.LAZY)
+    @JoinColumn(name = "club_id", insertable = false, updatable = false)
     val events: MutableList<Event> = mutableListOf()
 }

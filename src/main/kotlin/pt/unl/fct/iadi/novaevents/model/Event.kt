@@ -14,10 +14,6 @@ class Event(
     @Column(name = "club_id", nullable = false)
     val clubId: Long = 0,
 
-    @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "club_id", insertable = false, updatable = false)
-    val club: Club? = null,
-
     @Column(nullable = false)
     var name: String = "",
 
