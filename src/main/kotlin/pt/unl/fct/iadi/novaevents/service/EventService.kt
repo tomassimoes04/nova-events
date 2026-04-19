@@ -1,54 +1,54 @@
 package pt.unl.fct.iadi.novaevents.service
 
 import org.springframework.stereotype.Service
+import org.springframework.transaction.annotation.Transactional
+import pt.unl.fct.iadi.novaevents.model.AppUser
 import pt.unl.fct.iadi.novaevents.model.Event
 import pt.unl.fct.iadi.novaevents.model.EventType
+import pt.unl.fct.iadi.novaevents.repository.EventRepository
 import java.time.LocalDate
 
 @Service
-class EventService {
-    private val events = mutableListOf<Event>()
-    private var nextId = 1L
+class EventService(private val eventRepository: EventRepository) {
 
-    init {
-        // ID 1
-        create(1, "Beginner's Chess Workshop", LocalDate.now().plusDays(7), EventType.WORKSHOP)
-        // ID 2 -> É este que o teste US4 procura em /clubs/1/events/2
-        create(1, "Spring Chess Tournament", LocalDate.now().plusDays(14), EventType.COMPETITION)
-        // ID 3
-        create(2, "Robot Build Night", LocalDate.now().plusDays(2), EventType.WORKSHOP)
-    }
+    fun findAll(): List<Event> = eventRepository.findAll()
 
-    fun findAll() = events.toList()
+    fun findById(id: Long): Event = eventRepository.findById(id)
+        .orElseThrow { NoSuchElementException("Event not found") }
 
-    fun findById(id: Long) = events.find { it.id == id }
-        ?: throw NoSuchElementException("Event not found")
+    fun findByClub(clubId: Long): List<Event> = eventRepository.findByClubId(clubId)
 
-    fun findByClub(clubId: Long) = events.filter { it.clubId == clubId }
-
-    fun create(clubId: Long, name: String, date: LocalDate, type: EventType, loc: String? = null, desc: String? = null): Event {
-        // Requirement: Unique name check (case-insensitive) [cite: 1184-1188]
-        if (events.any { it.name.equals(name, ignoreCase = true) }) {
+    @Transactional
+    fun create(clubId: Long, name: String, date: LocalDate, type: EventType,
+               loc: String? = null, desc: String? = null, owner: AppUser): Event {
+        if (eventRepository.existsByNameIgnoreCase(name)) {
             throw IllegalArgumentException("An event with this name already exists")
         }
-        val event = Event(nextId++, clubId, name, date, type, loc, desc)
-        events.add(event)
-        return event
+        val event = Event(clubId = clubId, name = name, date = date, type = type,
+            location = loc, description = desc, owner = owner)
+        return eventRepository.save(event)
     }
 
+    @Transactional
     fun update(id: Long, name: String, date: LocalDate, type: EventType, loc: String?, desc: String?) {
-        val index = events.indexOfFirst { it.id == id }
-        if (index == -1) throw NoSuchElementException()
-
-        // Ensure name uniqueness (excluding itself)
-        if (events.any { it.id != id && it.name.equals(name, ignoreCase = true) }) {
+        val event = eventRepository.findById(id)
+            .orElseThrow { NoSuchElementException("Event not found") }
+        if (eventRepository.existsByNameIgnoreCaseAndIdNot(name, id)) {
             throw IllegalArgumentException("An event with this name already exists")
         }
-
-        events[index] = events[index].copy(name = name, date = date, type = type, location = loc, description = desc)
+        event.name = name
+        event.date = date
+        event.type = type
+        event.location = loc
+        event.description = desc
+        eventRepository.save(event)
     }
 
+    @Transactional
     fun delete(id: Long) {
-        events.removeIf { it.id == id }
+        eventRepository.deleteById(id)
     }
+
+    fun isOwner(eventId: Long, username: String): Boolean =
+        eventRepository.findById(eventId).map { it.owner?.username == username }.orElse(false)
 }

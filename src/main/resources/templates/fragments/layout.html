@@ -1,5 +1,6 @@
 <!DOCTYPE html>
-<html xmlns:th="http://www.thymeleaf.org">
+<html xmlns:th="http://www.thymeleaf.org"
+      xmlns:sec="http://www.thymeleaf.org/extras/springsecurity6">
 <head th:fragment="head(title)">
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
@@ -14,7 +15,7 @@
             <span class="navbar-toggler-icon"></span>
         </button>
         <div class="collapse navbar-collapse" id="navbarNav">
-            <ul class="navbar-nav">
+            <ul class="navbar-nav me-auto">
                 <li class="nav-item">
                     <a class="nav-link" th:href="@{/clubs}">Clubs</a>
                 </li>
@@ -22,6 +23,16 @@
                     <a class="nav-link" th:href="@{/events}">Events</a>
                 </li>
             </ul>
+            <div class="d-flex align-items-center" sec:authorize="isAuthenticated()">
+                <span id="navbar-username" class="text-light me-3"
+                      th:text="${#authentication.name}">username</span>
+                <form th:action="@{/logout}" method="post" class="d-inline">
+                    <button type="submit" class="btn btn-outline-light btn-sm">Logout</button>
+                </form>
+            </div>
+            <div sec:authorize="!isAuthenticated()">
+                <a th:href="@{/login}" class="btn btn-outline-light btn-sm">Login</a>
+            </div>
         </div>
     </div>
 </nav>
