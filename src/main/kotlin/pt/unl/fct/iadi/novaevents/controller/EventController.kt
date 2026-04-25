@@ -69,7 +69,12 @@ class EventController(
                 form.location, form.description, owner)
             "redirect:/clubs/$clubId/events/${newEvent.id}"
         } catch (e: IllegalArgumentException) {
-            bindingResult.rejectValue("name", "duplicate", e.message ?: "")
+            val msg = e.message ?: ""
+            val field = when {
+                msg.contains("Location", ignoreCase = true) || msg.contains("raining", ignoreCase = true) -> "location"
+                else -> "name"
+            }
+            bindingResult.rejectValue(field, "invalid", msg)
             model["clubId"] = clubId
             "events/form"
         }

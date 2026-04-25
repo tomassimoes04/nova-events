@@ -1,0 +1,24 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<body>
+<!-- Weather badge fragment. Rendered for both the JS fetch and the HTMX swap. -->
+<span th:fragment="badge"
+      th:with="isRaining=${raining}, loc=${location}"
+      th:classappend="${isRaining == null} ? 'badge bg-secondary' :
+                      (${isRaining} ? 'badge bg-warning text-dark' : 'badge bg-success')"
+      class="badge">
+    <th:block th:if="${isRaining == null}">
+        Weather unavailable for
+        <span th:text="${loc}">Location</span>
+    </th:block>
+    <th:block th:if="${isRaining != null and isRaining}">
+        It is raining at
+        <span th:text="${loc}">Location</span>
+    </th:block>
+    <th:block th:if="${isRaining != null and !isRaining}">
+        Clear skies at
+        <span th:text="${loc}">Location</span>
+    </th:block>
+</span>
+</body>
+</html>

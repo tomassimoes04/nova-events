@@ -5,11 +5,21 @@ import org.springframework.transaction.annotation.Transactional
 import pt.unl.fct.iadi.novaevents.model.AppUser
 import pt.unl.fct.iadi.novaevents.model.Event
 import pt.unl.fct.iadi.novaevents.model.EventType
+import pt.unl.fct.iadi.novaevents.repository.ClubRepository
 import pt.unl.fct.iadi.novaevents.repository.EventRepository
+import pt.unl.fct.iadi.novaevents.weather.WeatherService
 import java.time.LocalDate
 
 @Service
-class EventService(private val eventRepository: EventRepository) {
+class EventService(
+    private val eventRepository: EventRepository,
+    private val clubRepository: ClubRepository,
+    private val weatherService: WeatherService
+) {
+
+    companion object {
+        const val HIKING_CLUB_NAME = "Hiking & Outdoors Club"
+    }
 
     fun findAll(): List<Event> = eventRepository.findFiltered(null, null, null, null)
 
@@ -26,6 +36,20 @@ class EventService(private val eventRepository: EventRepository) {
                loc: String? = null, desc: String? = null, owner: AppUser): Event {
         if (eventRepository.existsByNameIgnoreCase(name)) {
             throw IllegalArgumentException("An event with this name already exists")
+        }
+        // Hiking & Outdoors Club rules: outdoor events need a location and cannot be created
+        // while it is raining at that location.
+        val club = clubRepository.findById(clubId)
+            .orElseThrow { NoSuchElementException("Club with id $clubId not found") }
+        if (club.name.equals(HIKING_CLUB_NAME, ignoreCase = true)) {
+            if (loc.isNullOrBlank()) {
+                throw IllegalArgumentException("Location is required for outdoor events")
+            }
+            if (weatherService.isRaining(loc) == true) {
+                throw IllegalArgumentException(
+                    "It is currently raining at \"$loc\" — outdoor events cannot be created in bad weather"
+                )
+            }
         }
         val event = Event(clubId = clubId, name = name, date = date, type = type,
             location = loc, description = desc, owner = owner)

@@ -1,11 +1,12 @@
 package pt.unl.fct.iadi.novaevents.security
 
 import jakarta.servlet.http.Cookie
-import jakarta.servlet.http.HttpServletRequest
-import jakarta.servlet.http.HttpServletResponse
 import org.springframework.context.annotation.Bean
 import org.springframework.context.annotation.Configuration
+import org.springframework.core.Ordered
+import org.springframework.core.annotation.Order
 import org.springframework.http.HttpMethod
+import org.springframework.http.HttpStatus
 import org.springframework.security.config.annotation.method.configuration.EnableMethodSecurity
 import org.springframework.security.config.annotation.web.builders.HttpSecurity
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity
@@ -13,6 +14,7 @@ import org.springframework.security.config.http.SessionCreationPolicy
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder
 import org.springframework.security.crypto.password.PasswordEncoder
 import org.springframework.security.web.SecurityFilterChain
+import org.springframework.security.web.authentication.HttpStatusEntryPoint
 import org.springframework.security.web.authentication.LoginUrlAuthenticationEntryPoint
 import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter
 import org.springframework.security.web.csrf.CookieCsrfTokenRepository
@@ -25,52 +27,61 @@ class SecurityConfig(
     private val loginSuccessHandler: LoginSuccessHandler
 ) {
 
+    /**
+     * API chain — matches ``/api/` paths` first. Stateless, JWT-only, no form login, CSRF disabled
+     * (safe because the chain never authenticates cookie-only browser sessions for these endpoints).
+     * Unauthenticated requests get `401` instead of a redirect to the login page.
+     */
     @Bean
-    fun securityFilterChain(http: HttpSecurity): SecurityFilterChain {
+    @Order(1)
+    fun apiSecurityFilterChain(http: HttpSecurity): SecurityFilterChain {
+        http
+            .securityMatcher("/api/**")
+            .authorizeHttpRequests { it.anyRequest().authenticated() }
+            .sessionManagement { it.sessionCreationPolicy(SessionCreationPolicy.STATELESS) }
+            .csrf { it.disable() }
+            .httpBasic { }
+            .exceptionHandling { it.authenticationEntryPoint(HttpStatusEntryPoint(HttpStatus.UNAUTHORIZED)) }
+            .addFilterBefore(jwtAuthFilter, UsernamePasswordAuthenticationFilter::class.java)
+        return http.build()
+    }
+
+    /**
+     * Web chain — handles everything else (pages). Form login + JWT cookie, stateless.
+     */
+    @Bean
+    @Order(Ordered.LOWEST_PRECEDENCE)
+    fun webSecurityFilterChain(http: HttpSecurity): SecurityFilterChain {
         http
             .authorizeHttpRequests { auth ->
-                // Public infrastructure paths
                 auth.requestMatchers("/login", "/login/**", "/error", "/favicon.ico").permitAll()
-                // Restricted write operations must be declared BEFORE the broad GET permitAll rules
-                // Creating events: EDITOR or ADMIN
                 auth.requestMatchers(HttpMethod.GET, "/clubs/*/events/new").hasAnyRole("EDITOR", "ADMIN")
                 auth.requestMatchers(HttpMethod.POST, "/clubs/*/events").hasAnyRole("EDITOR", "ADMIN")
-                // Editing events: EDITOR or ADMIN (+ @PreAuthorize ownership check)
                 auth.requestMatchers(HttpMethod.GET, "/clubs/*/events/*/edit").hasAnyRole("EDITOR", "ADMIN")
                 auth.requestMatchers(HttpMethod.PUT, "/clubs/*/events/*").hasAnyRole("EDITOR", "ADMIN")
-                // Deleting events: ADMIN only (+ @PreAuthorize ownership check)
                 auth.requestMatchers(HttpMethod.GET, "/clubs/*/events/*/delete").hasRole("ADMIN")
                 auth.requestMatchers(HttpMethod.DELETE, "/clubs/*/events/*").hasRole("ADMIN")
-                // Public read operations (after specific restricted rules above)
                 auth.requestMatchers(HttpMethod.GET, "/", "/clubs", "/clubs/*", "/events").permitAll()
                 auth.requestMatchers(HttpMethod.GET, "/clubs/*/events/*").permitAll()
-                // Everything else requires authentication
                 auth.anyRequest().authenticated()
             }
             .formLogin { form ->
-                form
-                    .loginPage("/login")
+                form.loginPage("/login")
                     .successHandler(loginSuccessHandler)
                     .failureUrl("/login?error")
                     .permitAll()
             }
             .logout { logout ->
-                logout
-                    .logoutSuccessUrl("/")
+                logout.logoutSuccessUrl("/")
                     .deleteCookies("jwt")
                     .clearAuthentication(true)
                     .permitAll()
             }
-            .sessionManagement { session ->
-                session.sessionCreationPolicy(SessionCreationPolicy.STATELESS)
-            }
-            .csrf { csrf ->
-                csrf.csrfTokenRepository(CookieCsrfTokenRepository.withHttpOnlyFalse())
-            }
+            .sessionManagement { it.sessionCreationPolicy(SessionCreationPolicy.STATELESS) }
+            .csrf { it.csrfTokenRepository(CookieCsrfTokenRepository.withHttpOnlyFalse()) }
             .exceptionHandling { ex ->
                 val loginEntryPoint = LoginUrlAuthenticationEntryPoint("/login")
                 ex.authenticationEntryPoint { request, response, authException ->
-                    // Save the requested URL in a cookie for post-login redirect
                     val savedUrl = request.requestURI +
                         (request.queryString?.let { "?$it" } ?: "")
                     val redirectCookie = Cookie("REDIRECT_URI", savedUrl).apply {
@@ -78,7 +89,6 @@ class SecurityConfig(
                         maxAge = 300
                     }
                     response.addCookie(redirectCookie)
-                    // Delegate to Spring's standard entry point (sends absolute redirect URL)
                     loginEntryPoint.commence(request, response, authException)
                 }
             }

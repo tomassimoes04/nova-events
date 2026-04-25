@@ -43,8 +43,55 @@
 
         <div class="mb-3">
             <label class="form-label">Location</label>
-            <input type="text" th:field="*{location}" class="form-control">
+            <input type="text" id="location" th:field="*{location}" class="form-control"
+                   th:classappend="${#fields.hasErrors('location')} ? 'is-invalid'">
+            <div class="invalid-feedback" th:errors="*{location}">Location error</div>
+            <div class="mt-2 d-flex gap-2 align-items-center flex-wrap">
+                <button type="button" id="check-weather-js" class="btn btn-outline-info btn-sm">
+                    Check Weather JS
+                </button>
+                <button type="button"
+                        class="btn btn-outline-info btn-sm"
+                        hx-get="/api/weather"
+                        hx-include="[name='location']"
+                        hx-trigger="click"
+                        hx-target="#weather-result"
+                        hx-swap="innerHTML">
+                    Check Weather HTMX
+                </button>
+                <span id="weather-result" class="ms-2"></span>
+            </div>
         </div>
+        <script>
+            document.addEventListener('DOMContentLoaded', function () {
+                const btn = document.getElementById('check-weather-js');
+                if (!btn) return;
+                btn.addEventListener('click', async function () {
+                    const loc = document.getElementById('location').value;
+                    const out = document.getElementById('weather-result');
+                    if (!loc) { out.innerHTML = '<span class="badge bg-secondary">Enter a location first</span>'; return; }
+                    try {
+                        const r = await fetch('/api/weather?location=' + encodeURIComponent(loc), {
+                            headers: { 'Accept': 'application/json' }
+                        });
+                        if (!r.ok) {
+                            out.innerHTML = '<span class="badge bg-secondary">Weather unavailable</span>';
+                            return;
+                        }
+                        const data = await r.json();
+                        if (data.raining === null) {
+                            out.innerHTML = '<span class="badge bg-secondary">Weather unavailable for ' + loc + '</span>';
+                        } else if (data.raining) {
+                            out.innerHTML = '<span class="badge bg-warning text-dark">It is raining at ' + loc + '</span>';
+                        } else {
+                            out.innerHTML = '<span class="badge bg-success">Clear skies at ' + loc + '</span>';
+                        }
+                    } catch (e) {
+                        out.innerHTML = '<span class="badge bg-secondary">Weather unavailable</span>';
+                    }
+                });
+            });
+        </script>
 
         <div class="mb-3">
             <label class="form-label">Description</label>

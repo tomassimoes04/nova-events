@@ -65,7 +65,7 @@ class DataInitializer(
             eventService.create(chessId, "Spring Chess Tournament", LocalDate.now().plusDays(14), EventType.COMPETITION, owner = alice)
             eventService.create(roboticsId, "Robot Build Night", LocalDate.now().plusDays(2), EventType.WORKSHOP, owner = alice)
             eventService.create(photoId, "Street Photography Walk", LocalDate.now().plusDays(5), EventType.SOCIAL, owner = alice)
-            eventService.create(hikingId, "Serra da Arrábida Hike", LocalDate.now().plusDays(10), EventType.SOCIAL, owner = alice)
+            eventService.create(hikingId, "Serra da Arrábida Hike", LocalDate.now().plusDays(10), EventType.SOCIAL, loc = "Setúbal", owner = alice)
             eventService.create(filmId, "Kubrick Retrospective", LocalDate.now().plusDays(3), EventType.TALK, owner = alice)
         }
     }
