@@ -8,17 +8,18 @@ import pt.unl.fct.iadi.novaevents.model.AppRole
 import pt.unl.fct.iadi.novaevents.model.AppUser
 import pt.unl.fct.iadi.novaevents.model.Club
 import pt.unl.fct.iadi.novaevents.model.ClubCategory
+import pt.unl.fct.iadi.novaevents.model.Event
 import pt.unl.fct.iadi.novaevents.model.EventType
 import pt.unl.fct.iadi.novaevents.repository.AppUserRepository
 import pt.unl.fct.iadi.novaevents.repository.ClubRepository
-import pt.unl.fct.iadi.novaevents.service.EventService
+import pt.unl.fct.iadi.novaevents.repository.EventRepository
 import java.time.LocalDate
 
 @Component
 class DataInitializer(
     private val userRepository: AppUserRepository,
     private val clubRepository: ClubRepository,
-    private val eventService: EventService,
+    private val eventRepository: EventRepository,
     private val passwordEncoder: PasswordEncoder
 ) : ApplicationRunner {
 
@@ -49,8 +50,10 @@ class DataInitializer(
             clubRepository.save(Club(name = "Film Society", description = "Discussing and screening cinematic masterpieces.", category = ClubCategory.CULTURAL))
         }
 
-        // Seed events (one per club minimum)
-        if (eventService.findAll().isEmpty()) {
+        // Seed events (one per club minimum). We use the repository directly so we
+        // bypass EventService's rain check, which would call the external weather API
+        // and break tests that use MockRestServiceServer.
+        if (eventRepository.count() == 0L) {
             val alice = userRepository.findByUsername("alice")!!
             val clubs = clubRepository.findAll()
             val clubMap = clubs.associateBy { it.name }
@@ -61,12 +64,12 @@ class DataInitializer(
             val hikingId = clubMap["Hiking & Outdoors Club"]!!.id
             val filmId = clubMap["Film Society"]!!.id
 
-            eventService.create(chessId, "Beginner's Chess Workshop", LocalDate.now().plusDays(7), EventType.WORKSHOP, owner = alice)
-            eventService.create(chessId, "Spring Chess Tournament", LocalDate.now().plusDays(14), EventType.COMPETITION, owner = alice)
-            eventService.create(roboticsId, "Robot Build Night", LocalDate.now().plusDays(2), EventType.WORKSHOP, owner = alice)
-            eventService.create(photoId, "Street Photography Walk", LocalDate.now().plusDays(5), EventType.SOCIAL, owner = alice)
-            eventService.create(hikingId, "Serra da Arrábida Hike", LocalDate.now().plusDays(10), EventType.SOCIAL, loc = "Setúbal", owner = alice)
-            eventService.create(filmId, "Kubrick Retrospective", LocalDate.now().plusDays(3), EventType.TALK, owner = alice)
+            eventRepository.save(Event(clubId = chessId, name = "Beginner's Chess Workshop", date = LocalDate.now().plusDays(7), type = EventType.WORKSHOP, owner = alice))
+            eventRepository.save(Event(clubId = chessId, name = "Spring Chess Tournament", date = LocalDate.now().plusDays(14), type = EventType.COMPETITION, owner = alice))
+            eventRepository.save(Event(clubId = roboticsId, name = "Robot Build Night", date = LocalDate.now().plusDays(2), type = EventType.WORKSHOP, owner = alice))
+            eventRepository.save(Event(clubId = photoId, name = "Street Photography Walk", date = LocalDate.now().plusDays(5), type = EventType.SOCIAL, owner = alice))
+            eventRepository.save(Event(clubId = hikingId, name = "Serra da Arrábida Hike", date = LocalDate.now().plusDays(10), type = EventType.SOCIAL, location = "Setúbal", owner = alice))
+            eventRepository.save(Event(clubId = filmId, name = "Kubrick Retrospective", date = LocalDate.now().plusDays(3), type = EventType.TALK, owner = alice))
         }
     }
 }

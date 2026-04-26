@@ -24,7 +24,7 @@
                 </li>
             </ul>
             <div class="d-flex align-items-center" sec:authorize="isAuthenticated()">
-                <span id="navbar-username" class="text-light me-3"
+                <span id="navbar-username" class="navbar-username text-light me-3"
                       th:text="${#authentication.name}">username</span>
                 <form th:action="@{/logout}" method="post" class="d-inline">
                     <button type="submit" class="btn btn-outline-light btn-sm">Logout</button>
